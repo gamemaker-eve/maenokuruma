@@ -285,7 +285,9 @@ function ell(p,sx,sy,sz,m,x,y,z){const o=new THREE.Mesh(GS,m);o.scale.set(sx,sy,
 function plateTex(c){const cn=document.createElement('canvas');cn.width=256;cn.height=128;const x=cn.getContext('2d');
  x.fillStyle='#f4f4ee';x.fillRect(0,0,256,128);x.strokeStyle='#1c6b3a';x.lineWidth=6;x.strokeRect(3,3,250,122);
  x.fillStyle='#1c6b3a';x.textAlign='center';x.textBaseline='middle';x.font='700 24px sans-serif';x.fillText(c.reg+' '+c.cls,128,24);
- x.font='700 64px sans-serif';x.fillText(c.kana,40,92);x.fillStyle='#111';x.font='700 76px monospace';x.fillText(c.dg,155,88);return new THREE.CanvasTexture(cn)}
+ x.font='700 64px sans-serif';x.fillText(c.kana,42,92);x.fillStyle='#111';
+ let fs=76;x.font='700 '+fs+'px monospace';const mw=x.measureText(c.dg).width;if(mw>158)fs=Math.floor(fs*158/mw);   // スマホは文字の幅が広いことがあるので、かなの右の枠に収まる大きさに合わせる
+ x.font='700 '+fs+'px monospace';x.fillText(c.dg,167,88);return new THREE.CanvasTexture(cn)}
 let STT,HLT;
 function mkSparks(g_){if(!STT){let c=document.createElement('canvas');c.width=c.height=128;let x=c.getContext('2d');
   x.fillStyle='rgba(255,255,255,.95)';x.beginPath();x.moveTo(64,2);x.quadraticCurveTo(70,58,126,64);x.quadraticCurveTo(70,70,64,126);x.quadraticCurveTo(58,70,2,64);x.quadraticCurveTo(58,58,64,2);x.fill();
@@ -595,7 +597,8 @@ function shareX(){const t=`スコア:${score}点\n${solved}台の車のナンバ
 const sbOn=!!(SB_URL&&SB_KEY);
 async function rpc(fn,args){const base=SB_URL.replace(/\/rest\/v1\/?$/,'').replace(/\/+$/,'');   // URLの末尾に /rest/v1/ が付いていても大丈夫にする
  const h={'Content-Type':'application/json',apikey:SB_KEY};if(SB_KEY.startsWith('eyJ'))h.Authorization='Bearer '+SB_KEY;   // 新形式(sb_publishable_…)のキーはJWTではないので apikey だけ送る
- const r=await fetch(base+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(args)});if(!r.ok)throw new Error(r.status);return r.json()}
+ const r=await fetch(base+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(args)});if(!r.ok){let t='';try{t=(await r.text()).slice(0,100)}catch(e){}throw new Error(r.status+' '+t)}return r.json()}
+const track=k=>{if(sbOn)rpc('count_event',{p_kind:k}).catch(()=>{})};   // アクセス数・プレイ数のカウント(失敗してもゲームには影響しない)
 const localDB=()=>{try{return JSON.parse(localStorage.getItem('td_lrank')||'{}')}catch(e){return{}}};
 async function submitScore(m,s,c){if(sbOn){await rpc('submit_score',{p_name:user,p_mode:m,p_score:s,p_cnt:c});return}
  const d=localDB();d[m]=d[m]||{};const o=d[m][user];if(!o||s>o.s)d[m][user]={s,c};try{localStorage.setItem('td_lrank',JSON.stringify(d))}catch(e){}}   // 高いスコアだけ保存
@@ -614,7 +617,7 @@ async function showRank(m){if(st!='rank')prev=st;if(!m&&st!='rank')rkMode=mode;s
   let h=me?`<div class="mine">あなたの順位 <b>${me.rank}位</b> / ${me.total}人</div>`:'<div class="mine">スコアがありません</div>';
   if(FULL_RANKING)h+=`<div class="rk hd"><span>順位</span><span class="nm">ユーザー名</span><span>スコア</span><span>台数</span></div><div class="rklist">${rows.length?rows.map(r=>`<div class="rk${r.name==user?' me':''}"><span>${r.rank}</span><span class="nm">${esc(r.name)}</span><span>${r.score}</span><span>${r.cnt}台</span></div>`).join(''):'<div class="rk">まだ誰もいません</div>'}</div>`;
   $('rkb').innerHTML=h;const bx_=document.querySelector('.rklist'),mi=document.querySelector('.rk.me');if(bx_&&mi)bx_.scrollTop=mi.offsetTop-bx_.clientHeight/2+mi.clientHeight/2}   // 自分の行まで自動スクロール
- catch(e){const b=$('rkb');if(b)b.textContent='ランキングを読み込めませんでした'}}
+ catch(e){const b=$('rkb');if(b)b.textContent='ランキングを読み込めませんでした('+(e&&e.message||e)+')'}}
 /* ---------- 画面 ---------- */
 const OPN={'+':'＋','-':'−','*':'×','/':'÷'},fmt=s=>s.replace(/[+\-*/]/g,c=>OPN[c]);
 function ovShow(h){const o=$('ov');o.style.display='flex';o.innerHTML='<div class="ovin">'+h+'</div>';o.scrollTop=0}
@@ -631,30 +634,34 @@ function idle(){clearTg();clearLeavers();plan=null;if(cw)endCross();toOn(0);$('u
 function showLogin(){st='login';idle();setTop();
  ovShow(`<h1>${NAME}</h1><p>ユーザー名を入力してください</p><input id="nm" maxlength="12" placeholder="ユーザー名(12文字まで)" value="${esc(user)}"><div id="nerr" class="err"></div><button class="go big" onclick="doLogin()">ログイン</button>`);
  const i=$('nm');if(i)i.onkeydown=e=>{if(e.key=='Enter')doLogin()}}
-function doLogin(){const v=($('nm').value||'').trim().slice(0,12);if(!v){$('nerr').textContent='ユーザー名を入力してください';return}user=v;try{localStorage.setItem('td_user',v)}catch(e){}showHome()}
+function doLogin(){const v=($('nm').value||'').trim().slice(0,12);if(!v){$('nerr').textContent='ユーザー名を入力してください';return}user=v;try{localStorage.setItem('td_user',v)}catch(e){}track('access');showHome()}
 function showHome(){st='home';idle();setTop();ovShow(`<h1>${NAME}</h1><button class="go big" onclick="showMenu()">PLAY</button><button class="big" onclick="showHow()">遊び方</button>`)}
 function showHow(){st='how';idle();setTop();
  ovShow(`<h2>遊び方</h2><div class="how"><p class="lead">前の車のナンバー(4つの数字)を計算して、答えの数字にしよう。式にカッコはなく、×÷が先に計算されるよ。</p>
  <table class="tb"><tr><th>モード</th><th>数字</th><th>使える記号</th></tr><tr><td>かんたん</td><td>順番どおり(固定)</td><td>＋ −</td></tr><tr><td>ふつう</td><td>並べ替える</td><td>＋ −</td></tr><tr><td>むずかしい</td><td>順番どおり(固定)</td><td>＋ − × ÷</td></tr><tr><td>鬼</td><td>並べ替える</td><td>＋ − × ÷(答えは目標の数字)</td></tr><tr><td>タイムアタック(高速)</td><td>順番どおり(固定)</td><td>＋ −</td></tr></table>
  <ul><li>前の車が曲がったり走り去る前に答えよう。間に合わないと残機(♥3つ)が減る</li><li>タイムアタックは60秒で何台解けるか。ミスは−2秒</li><li>金の車は難しいけど高得点! 横断歩道では♡がもらえることも</li><li>空の色と右下の時計で、朝・昼・夕方・夜が変わるよ</li></ul></div><button class="big" onclick="showHome()">もどる</button>`)}
 function showMenu(){st='menu';idle();setTop();
- ovShow(`<h2>モードを選ぼう</h2><div class="frame"><div class="ft">一般道路</div><div class="g2">${['easy','normal','hard','oni'].map(k=>`<button onclick="showInfo('${k}')">${MODES[k].n}</button>`).join('')}</div></div>
- <div class="frame"><div class="ft">高速</div><button class="wide" onclick="showInfo('hwy')">タイムアタック</button></div>`)}
+ ovShow(`<h2>モードを選ぼう</h2><div class="frame"><div class="ft">一般道路</div><div class="g2">${['easy','normal','hard','oni'].map(k=>`<button onclick="pickMode('${k}')">${MODES[k].n}</button>`).join('')}</div></div>
+ <div class="frame"><div class="ft">高速</div><button class="wide" onclick="pickMode('hwy')">タイムアタック</button></div>`)}
+function pickMode(m){track('play_'+m);showInfo(m)}   // モード選択画面でモードを選んだ回数を数える
 function showInfo(m){st='info';mode=m;idle();setTop();const b=bst(m);
  ovShow(`<h2>${lab(m)}</h2><div class="bestbox">BEST<b>${b.s}</b>点 ／ <b>${b.c}</b>台</div>
  <div class="how"><b>このモードのルール</b><ul>${MODES[m].rule.map(r=>`<li>${r}</li>`).join('')}${m=='hwy'?'':'<li>前の車が去る前に解く(間に合わないと残機−1)</li>'}</ul></div>
  <button class="go big start" onclick="start('${m}')">スタート</button>`)}
+let ovHtml='',orankT='';
+const setOR=t=>{orankT=t;const e=$('orank');if(e&&st=='over')e.textContent=t};
+function showResult(){st='over';idle();setTop();ovShow(ovHtml);const e=$('orank');if(e&&orankT)e.textContent=orankT}   // ランキングから戻ったとき、さっきのリザルト画面をそのまま出す
 function over(){
  if(st=='over')return;st='over';const b=bst(mode);if(score>b.s){best[mode]={s:score,c:solved};try{localStorage.setItem('td_best2',JSON.stringify(best))}catch(e){}}
- idle();setTop();const nb=bst(mode);
- ovShow(`<h1 class="huge">${mode=='hwy'?'高速を出ました!':'GAME OVER'}</h1><p class="sub">${lab(mode)}</p>
+ idle();setTop();orankT='';const nb=bst(mode);
+ ovShow(ovHtml=`<h1 class="huge">${mode=='hwy'?'高速を出ました!':'GAME OVER'}</h1><p class="sub">${lab(mode)}</p>
  <div class="scoreb">${score}<small>点</small></div><p>解いた車 <b>${solved}台</b> ／ BEST ${nb.s}点・${nb.c}台</p><p id="orank" class="sub">ランキング: 確認中…</p>
  <div class="lgbox">${log.length?log.map(l=>`<div class="lg"><div class="n"><span class='${l.gold?'gd':''}'><b class='mk ${l.ok?'ok':'ng'}'>${l.ok?'○':'×'}</b> ${l.gold?'★金の車のナンバー':'ナンバー'} ${l.dg}</span>${l.tg!=10?'(目標 '+l.tg+')':''}</div><div class="a">答え ${fmt(l.sol)}＝${l.tg}</div></div>`).join(''):'<div class="lg">問題なし</div>'}</div>
  <button class="go" onclick="start('${mode}')">もう一回</button><button onclick="showMenu()">モード選択</button>
  ${SHOW_SHARE?'<button onclick="shareX()">Xでシェア</button>':''}`);
- submitScore(mode,score,solved).then(()=>myRank(mode)).then(r=>{rankLine=r?`${r.rank}位/${r.total}人`:'';const e=$('orank');if(e&&st=='over')e.textContent=r?`ランキング: ${r.rank}位 / ${r.total}人`:'ランキング: スコアがありません'})
-  .catch(()=>{const e=$('orank');if(e)e.textContent='ランキングを取得できませんでした'})}
-function goBack(){if(st=='how'||st=='menu')showHome();else if(st=='info'||st=='over')showMenu();else if(st=='rank'){prev=='how'||prev=='info'||prev=='over'||prev=='menu'?({how:showHow,info:()=>showInfo(mode),over:showMenu,menu:showMenu})[prev]():showHome()}
+ submitScore(mode,score,solved).then(()=>myRank(mode)).then(r=>{rankLine=r?`${r.rank}位/${r.total}人`:'';setOR(r?`ランキング: ${r.rank}位 / ${r.total}人`:'ランキング: スコアがありません')})
+  .catch(e=>setOR('ランキングを取得できませんでした('+(e&&e.message||e)+')'))}
+function goBack(){if(st=='how'||st=='menu')showHome();else if(st=='info'||st=='over')showMenu();else if(st=='rank'){prev=='how'||prev=='info'||prev=='over'||prev=='menu'?({how:showHow,info:()=>showInfo(mode),over:showResult,menu:showMenu})[prev]():showHome()}
  else if(st=='play'){paused=1;pauseAt=N();$('cf').style.display='flex'}}
 function resume(){const d=N()-pauseAt;t0+=d;enter+=d;hwEnd+=d;okT+=d;missT+=d;nextTurn+=d;bendT+=d;if(cw){cw.wt+=d;cw.gt+=d;cw.born+=d}if(plan)plan.t+=d;paused=0;$('cf').style.display='none'}
 function quit(){$('cf').style.display='none';showMenu()}
