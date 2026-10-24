@@ -1,7 +1,7 @@
 /* 近未来(半透明ガラス+ネオン)テーマ。画面いっぱいに収まるレイアウト */
 :root{--c:#37e6ff;--g:rgba(12,24,48,.5);--b:rgba(55,230,255,.45);--vh:1vh}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-html,body,button,input,select,#stage,#ui,#ov{touch-action:manipulation}   /* ダブルタップ拡大を止める(タップ・スクロールは普通に使える) */
+*,*::before,*::after{touch-action:manipulation}   /* ダブルタップ拡大を止める(タップ・スクロールは普通に使える) */
 html,body{height:100%}
 body{background:radial-gradient(#101a33,#04060d);color:#e8f6ff;font-family:system-ui,"Hiragino Sans",Meiryo,sans-serif;user-select:none;overflow:hidden}
 #app{height:100vh;height:100dvh;display:grid;grid-template-rows:minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr)}
