@@ -643,6 +643,7 @@ function showHow(){st='how';idle();setTop();
 function showMenu(){st='menu';idle();setTop();
  ovShow(`<h2>モードを選ぼう</h2><div class="frame"><div class="ft">一般道路</div><div class="g2">${['easy','normal','hard','oni'].map(k=>`<button onclick="pickMode('${k}')">${MODES[k].n}</button>`).join('')}</div></div>
  <div class="frame"><div class="ft">高速</div><button class="wide" onclick="pickMode('hwy')">タイムアタック</button></div>`)}
+function again(m){track('play_'+m);start(m)}   // 「もう一回」もプレイ回数として数える
 function pickMode(m){track('play_'+m);showInfo(m)}   // モード選択画面でモードを選んだ回数を数える
 function showInfo(m){st='info';mode=m;idle();setTop();const b=bst(m);
  ovShow(`<h2>${lab(m)}</h2><div class="bestbox">BEST<b>${b.s}</b>点 ／ <b>${b.c}</b>台</div>
@@ -657,7 +658,7 @@ function over(){
  ovShow(ovHtml=`<h1 class="huge">${mode=='hwy'?'高速を出ました!':'GAME OVER'}</h1><p class="sub">${lab(mode)}</p>
  <div class="scoreb">${score}<small>点</small></div><p>解いた車 <b>${solved}台</b> ／ BEST ${nb.s}点・${nb.c}台</p><p id="orank" class="sub">ランキング: 確認中…</p>
  <div class="lgbox">${log.length?log.map(l=>`<div class="lg"><div class="n"><span class='${l.gold?'gd':''}'><b class='mk ${l.ok?'ok':'ng'}'>${l.ok?'○':'×'}</b> ${l.gold?'★金の車のナンバー':'ナンバー'} ${l.dg}</span>${l.tg!=10?'(目標 '+l.tg+')':''}</div><div class="a">答え ${fmt(l.sol)}＝${l.tg}</div></div>`).join(''):'<div class="lg">問題なし</div>'}</div>
- <button class="go" onclick="start('${mode}')">もう一回</button><button onclick="showMenu()">モード選択</button>
+ <button class="go" onclick="again('${mode}')">もう一回</button><button onclick="showMenu()">モード選択</button>
  ${SHOW_SHARE?'<button onclick="shareX()">Xでシェア</button>':''}`);
  submitScore(mode,score,solved).then(()=>myRank(mode)).then(r=>{rankLine=r?`${r.rank}位/${r.total}人`:'';setOR(r?`ランキング: ${r.rank}位 / ${r.total}人`:'ランキング: スコアがありません')})
   .catch(e=>setOR('ランキングを取得できませんでした('+(e&&e.message||e)+')'))}
