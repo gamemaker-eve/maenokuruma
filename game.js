@@ -4,7 +4,7 @@ const NAME='前の車、10にします',TAG='#前の車10にします';
 //  Supabaseでプロジェクトを作ったら、下の2つに「Project URL」と「anon public key」を貼ってください(手順は GUIDE.md)。
 //  空のままだと、ランキングは「この端末の中だけ」で動きます(テスト用)。
 //  書き方の例: const SB_URL='https://abcdefgh.supabase.co',SB_KEY='eyJhbGciOi...(anon public key)';
-const SB_URL='https://mxpqehajklgykmrmmujn.supabase.co/rest/v1/',SB_KEY='sb_publishable_CZr7qZmmtd510kfnCdyiTQ_KKBzc8sA';
+const SB_URL='https://mxpqehajklgykmrmmujn.supabase.co',SB_KEY='sb_publishable_CZr7qZmmtd510kfnCdyiTQ_KKBzc8sA';
 // ★ランキングの見せ方: true=身内用(全員の順位表が見える) / false=公開用(自分の順位だけ見える)
 const FULL_RANKING=true;
 // ★Xシェアボタン: 身内だけに共有したいとき(Xの投稿画面を出したくないとき)は、
@@ -557,7 +557,9 @@ const walkDur=()=>Math.max(...cw.peds.map((p,i)=>{const v=Math.max(p.userData.v,
 function halted(ww){   // 自車・前の車・周りの車・対向車がみんな止まって、横断歩道の上に車がいない。待ちが長引くほど「止まった」の基準をゆるめる(永久に赤のままにしない)
  const v=ww>6?2.5:.4;
  if(curS>(ww>6?2:.3)||(cw.z<-30&&ww<25))return false;if(cw.lt&&tg&&tg.vt>(ww>6?2:.3)&&!cw.go&&ww<10)return false;
- for(const c of npcs){if(c.dead||c.x>2.4||c.z>0)continue;if(Math.abs(c.z-cw.z)<4.8&&!(ww>12&&(c.vg||0)<v))return false;const d=c.z-cw.z-6.5;if(d>-1.5&&d<30&&c.vg>v)return false}
+ for(const c of npcs){if(c.dead||c.x>2.4||c.z>0)continue;
+  if(!cw.lt&&c.z>cw.z-4.8&&c.z<cw.z+60&&(c.vg===undefined||c.vg>=(ww>12?1.5:.4)||c.lcT!==undefined||c.fc))return false;   // 自車の前にいる車(走り去る車・車線変更中の車も)が横断歩道を過ぎるか、完全に止まるまでは、歩行者を青にしない
+  if(Math.abs(c.z-cw.z)<4.8&&!(ww>12&&(c.vg||0)<v))return false;const d=c.z-cw.z-6.5;if(d>-1.5&&d<30&&c.vg>v)return false}
  for(const o of onc){if(Math.abs(o.z-cw.z)<4.8&&!(ww>12&&(o.vg||0)<v))return false;const d=cw.z-o.z-6.5;if(d>-1.5&&d<30&&o.vg>v)return false}
  return true}
 function clearOnCross(){   // 最後の手段: 横断歩道の上で止まったままの車を取りのぞいて、人が渡れるようにする
@@ -591,7 +593,9 @@ function shareX(){const t=`スコア:${score}点\n${solved}台の車のナンバ
  window.open('https://x.com/intent/post?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(location.href),'_blank')}
 /* ---------- ランキング(Supabase。未設定なら端末内) ---------- */
 const sbOn=!!(SB_URL&&SB_KEY);
-async function rpc(fn,args){const r=await fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},body:JSON.stringify(args)});if(!r.ok)throw new Error(r.status);return r.json()}
+async function rpc(fn,args){const base=SB_URL.replace(/\/rest\/v1\/?$/,'').replace(/\/+$/,'');   // URLの末尾に /rest/v1/ が付いていても大丈夫にする
+ const h={'Content-Type':'application/json',apikey:SB_KEY};if(SB_KEY.startsWith('eyJ'))h.Authorization='Bearer '+SB_KEY;   // 新形式(sb_publishable_…)のキーはJWTではないので apikey だけ送る
+ const r=await fetch(base+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(args)});if(!r.ok)throw new Error(r.status);return r.json()}
 const localDB=()=>{try{return JSON.parse(localStorage.getItem('td_lrank')||'{}')}catch(e){return{}}};
 async function submitScore(m,s,c){if(sbOn){await rpc('submit_score',{p_name:user,p_mode:m,p_score:s,p_cnt:c});return}
  const d=localDB();d[m]=d[m]||{};const o=d[m][user];if(!o||s>o.s)d[m][user]={s,c};try{localStorage.setItem('td_lrank',JSON.stringify(d))}catch(e){}}   // 高いスコアだけ保存
