@@ -597,7 +597,7 @@ function shareX(){const t=`スコア:${score}点\n${solved}台の車のナンバ
 const sbOn=!!(SB_URL&&SB_KEY);
 async function rpc(fn,args){const base=SB_URL.replace(/\/rest\/v1\/?$/,'').replace(/\/+$/,'');   // URLの末尾に /rest/v1/ が付いていても大丈夫にする
  const h={'Content-Type':'application/json',apikey:SB_KEY};if(SB_KEY.startsWith('eyJ'))h.Authorization='Bearer '+SB_KEY;   // 新形式(sb_publishable_…)のキーはJWTではないので apikey だけ送る
- const r=await fetch(base+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(args)});if(!r.ok){let t='';try{t=(await r.text()).slice(0,100)}catch(e){}throw new Error(r.status+' '+t)}return r.json()}
+ const r=await fetch(base+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(args)});if(!r.ok){let t='';try{t=(await r.text()).slice(0,100)}catch(e){}throw new Error(r.status+' '+t)}const tx=await r.text();return tx?JSON.parse(tx):null}   // スコア登録は返事が空なので、空のときはそのまま終わる(SafariはここでJSONエラーになる)
 const track=k=>{if(sbOn)rpc('count_event',{p_kind:k}).catch(()=>{})};   // アクセス数・プレイ数のカウント(失敗してもゲームには影響しない)
 const localDB=()=>{try{return JSON.parse(localStorage.getItem('td_lrank')||'{}')}catch(e){return{}}};
 async function submitScore(m,s,c){if(sbOn){await rpc('submit_score',{p_name:user,p_mode:m,p_score:s,p_cnt:c});return}
@@ -718,7 +718,7 @@ function frame(){
   if(n>oncT){oncOn=!hwy&&!oncOn;oncT=n+rnd(12,26)}
  }else{curves.length=0;curveEnd=0;D=0;thBase=0;buildCurve();oncOn=0;if(tg||cw||leavers.length)idle()}
  applyDay(dt);
- for(const r of RAMPS){r.z+=S*dt;if(r.z>66)r.z-=LEN}
+ for(const r of RAMPS){r.z+=S*dt;if(r.z>66&&!npcs.some(c=>!c.dead&&c.ex===r))r.z-=LEN*Math.ceil((r.z-66)/LEN)}   // 出口・分岐へ向かう車がいる間は基準位置を巻き戻さない(車がランプの外へ飛び出すのを防ぐ)
  for(const o of world){o.z+=S*dt;if(o.z>10)o.z-=LEN;o.m.visible=(o.t=='h')==hwy;o.m.position.set(o.x+off(o.z),0,o.z);o.m.rotation.y=curveYaw(o.z);
   if(o.rl){o.rl[0].visible=o.rl[1].visible=true;for(const r of RAMPS){const d=((o.z-r.z+LEN/2)%LEN+LEN)%LEN-LEN/2;if(d<30&&d>-62)o.rl[r.side<0?0:1].visible=false}}}
  /* 同じ向きの車(レーンごとの速さ。車線変更は空いているときだけ) */
