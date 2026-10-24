@@ -835,3 +835,7 @@ rollSky();showLogin();frame();   // 起動時は毎回ログイン画面(前回�
 /* ---------- 拡大の禁止(Safari/Chrome) ---------- */
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));   // iPhone Safari: ピンチ拡大
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});   // 2本指の操作(Chrome・Safari)
+let lastTE=0;   // 押せないボタン(記号を押し切ったあと等)や何もない所のダブルタップ拡大を止める。押せるボタンの連打は止めない
+document.addEventListener('touchend',e=>{const t=Date.now(),el=e.target,b=el&&el.closest?el.closest('button'):null;
+ if(t-lastTE<400&&(!b||b.disabled)&&!/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName||''))e.preventDefault();lastTE=t},{passive:false});
+document.addEventListener('dblclick',e=>e.preventDefault());
