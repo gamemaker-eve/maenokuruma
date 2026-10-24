@@ -831,3 +831,7 @@ function frame(){
  if(cs!=clkS){clkS=cs;$('clk').textContent=cs}
  requestAnimationFrame(frame)}
 rollSky();showLogin();frame();   // 起動時は毎回ログイン画面(前回の名前が入力欄に残っています)
+
+/* ---------- 拡大の禁止(Safari/Chrome) ---------- */
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));   // iPhone Safari: ピンチ拡大
+document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});   // 2本指の操作(Chrome・Safari)
