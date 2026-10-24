@@ -10,7 +10,7 @@ const FULL_RANKING=true;
 // ★Xシェアボタン: 身内だけに共有したいとき(Xの投稿画面を出したくないとき)は、
 //   下の「const SHOW_SHARE=true;」を「const SHOW_SHARE=false;」に書き換えるだけで、ゲーム終了画面の「Xでシェア」が消えます。
 //   (ボタン本体は over() 関数の中の「Xでシェア」の行です。完全に消したいならその行の先頭に // を付けてコメントアウトしてください)
-const SHOW_SHARE=true;
+const SHOW_SHARE=false;
 const MODES={
  easy:{n:'かんたん',t:30,ops:'+-',perm:0,rule:['数字はナンバーの順番のまま(固定)','数字の間に ＋ か − を入れて10にしよう','例: 1 ＋ 2 ＋ 3 ＋ 4 ＝ 10']},
  normal:{n:'ふつう',t:35,ops:'+-',perm:1,rule:['使えるのは ＋ と − だけ','数字は並べ替えが必要な問題!','数字ボタンを好きな順に押して式を作ろう']},
