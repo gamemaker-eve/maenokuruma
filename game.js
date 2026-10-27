@@ -26,7 +26,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const setT=(id,t)=>{const e=$(id);if(e._t!==t){e._t=t;e.textContent=t}};
 const fol=(g,vL)=>Math.sqrt(vL*vL+12*Math.max(0,g-2.4)),stopV=d=>Math.sqrt(12*Math.max(0,d));   // 前の車との間隔・止まる位置までの距離から、出していい最大の速さ(減速6m/s²)
 const cv=$('c');let W=480,H=640,dpr=1,ren,camera;
-let mode='normal',qm='normal',gold=0,lt=0,st='login',ph='idle',score=0,combo=0,life=3,solved=0,t0=0,enter=0,Te=6,T=30,q,ex=[],best={},log=[],
+let mode='normal',qm='normal',gold=0,lt=0,st='login',ph='idle',score=0,combo=0,life=3,wrong=0,solved=0,t0=0,enter=0,Te=6,T=30,q,ex=[],best={},log=[],
  spd=1,tg=null,slot=null,slotDist=0,dir=1,xt='straight',missT=0,okT=0,tm=N(),view='drive',bend=0,bendS=0,bendT=0,nextTurn=0,cw=null,lastCross=0,
  tod=rnd(5,19),wx='fine',night=0,hwEnd=0,npcs=[],onc=[],oncOn=0,oncT=0,nextOnc=0,exitS=null,hudS='',paused=0,pauseAt=0,clkS='',lastBlk=-1,rankLine='',
  user='',prev='home',rkMode='easy',leavers=[],plan=null,curS=0,fillT=0;
@@ -492,7 +492,7 @@ function fillFront(){   // 問題の車が来るまでの間、前に普通の�
  if(c1&&laneSafe(0,c1)){c1.fc={t:N()+1,to:0};return}   // ウインカーを出して自車線へ
  if(clear(0,-85,null)){const c=mkNpc(-85,0);c.k=.08;npcs.push(c)}}
 function newCar(){
- if(tg){rm(tg.g);tg=null}toOn(0);slot=null;
+ wrong=0;if(tg){rm(tg.g);tg=null}toOn(0);slot=null;
  if(cw&&(!cw.go||(cw.z<3&&N()-cw.goT<14))||leavers.some(l=>Math.abs(l.x)<3.4&&l.z<12&&l.z>-80)){if(cw)fillFront();if(ph!='wait'){ph='wait';render()}return}   // 横断歩道を完全に過ぎるまで次の車は出さない(待っている間は前に普通の車をおく)   // 横断歩道が終わるまで・前の曲がる車が行くまで次の車は出さない
  if(!plan){const cntL=l=>npcs.filter(o=>Math.abs(o.x-l)<2&&o.z>-70&&o.z<35).length,c1=cntL(-3.5),c2=cntL(3.5);
   plan={gold:mode!='hwy'&&Math.random()<.01?1:0,lt:mode!='hwy'&&Math.random()<.07?1:0,x0h:mode=='hwy'?(c1<c2?-3.5:c2<c1?3.5:Math.random()<.5?-3.5:3.5):-3.5,t:N()}}
@@ -513,7 +513,7 @@ function newCar(){
  if(lt){startCross(true)}
  if(gold){pop('★ 金の車 出現!');sparkle()}
  render()}
-function start(m){mode=m;st='play';score=0;combo=0;life=3;solved=0;log=[];rankLine='';spd=m=='hwy'?1:2;bend=bendS=0;nextTurn=N()+8;lastCross=0;paused=0;
+function start(m){mode=m;st='play';score=0;combo=0;life=3;wrong=0;solved=0;log=[];rankLine='';spd=m=='hwy'?1:2;bend=bendS=0;nextTurn=N()+8;lastCross=0;paused=0;
  endCross();clearLeavers();plan=null;$('ov').style.display='none';$('cf').style.display='none';$('ui').style.display='flex';setTop();
  for(const c of npcs)if(!lanesNow().includes(c.lx)){c.lx=c.x=-3.5}
  for(const c of npcs){c.ex=0;c.home=undefined;c.dec=0;c.lv=undefined;c.lcT=undefined}
@@ -527,7 +527,9 @@ function good(){
  ph='ok';okT=n;adopt(0);slot=null;if(cw&&cw.lt)cw.done=1;combo++;solved++;
  const add=Math.round((100+bonus+combo*20)*MULT[qm]*(gold?2:1));score+=add;spd=Math.max(spd,mode=='hwy'?1:2);
  flashFx('#3f8');shakeFx();pop('+'+add+(gold?' ★':'')+(combo>1?'  '+combo+'COMBO':''));chime(combo);render()}
-function bad(){shakeFx();flashFx('#f33');if(mode=='hwy')hwEnd-=2;else t0-=1.5;combo=0;ex=MODES[qm].perm?[]:[{t:'d',i:0}];beep(130,.25,'sawtooth',.07);render()}
+function bad(){shakeFx();flashFx('#f33');if(mode=='hwy')hwEnd-=2;else t0-=1.5;combo=0;ex=MODES[qm].perm?[]:[{t:'d',i:0}];beep(130,.25,'sawtooth',.07);
+ if(mode!='hwy'){wrong++;if(wrong>=3){pop('ミス3回! ♥−1');miss();return}}   // 一般道路: 同じ車で3回まちがえたら残機が1つ減る(もう1つの条件は時間切れ)
+ render()}
 function miss(){
  log.push({dg:''+q.d[0]+q.d[1]+'-'+q.d[2]+q.d[3],sol:q.sol,ok:0,gold,tg:q.target});
  ph='miss';missT=N();life--;combo=0;if(cw&&cw.lt)cw.done=1;
@@ -639,7 +641,7 @@ function showHome(){st='home';idle();setTop();ovShow(`<h1>${NAME}</h1><button cl
 function showHow(){st='how';idle();setTop();
  ovShow(`<h2>遊び方</h2><div class="how"><p class="lead">前の車のナンバー(4つの数字)を計算して、答えの数字にしよう。式にカッコはなく、×÷が先に計算されるよ。</p>
  <table class="tb"><tr><th>モード</th><th>数字</th><th>使える記号</th></tr><tr><td>かんたん</td><td>順番どおり(固定)</td><td>＋ −</td></tr><tr><td>ふつう</td><td>並べ替える</td><td>＋ −</td></tr><tr><td>むずかしい</td><td>順番どおり(固定)</td><td>＋ − × ÷</td></tr><tr><td>鬼</td><td>並べ替える</td><td>＋ − × ÷(答えは目標の数字)</td></tr><tr><td>タイムアタック(高速)</td><td>順番どおり(固定)</td><td>＋ −</td></tr></table>
- <ul><li>前の車が曲がったり走り去る前に答えよう。間に合わないと残機(♥3つ)が減る</li><li>タイムアタックは60秒で何台解けるか。ミスは−2秒</li><li>金の車は難しいけど高得点! 横断歩道では♡がもらえることも</li><li>空の色と右下の時計で、朝・昼・夕方・夜が変わるよ</li></ul></div><button class="big" onclick="showHome()">もどる</button>`)}
+ <ul><li>残機(♥3つ)が減るのは次の2つ。①前の車が曲がったり走り去る前に答えられなかった(時間切れ) ②同じ車で3回まちがえた(ミス3回)</li><li>タイムアタックは60秒で何台解けるか。ミスは−2秒</li><li>金の車は難しいけど高得点! 横断歩道では♡がもらえることも</li><li>空の色と右下の時計で、朝・昼・夕方・夜が変わるよ</li></ul></div><button class="big" onclick="showHome()">もどる</button>`)}
 function showMenu(){st='menu';idle();setTop();
  ovShow(`<h2>モードを選ぼう</h2><div class="frame"><div class="ft">一般道路</div><div class="g2">${['easy','normal','hard','oni'].map(k=>`<button onclick="pickMode('${k}')">${MODES[k].n}</button>`).join('')}</div></div>
  <div class="frame"><div class="ft">高速</div><button class="wide" onclick="pickMode('hwy')">タイムアタック</button></div>`)}
@@ -678,7 +680,7 @@ function render(){
  if(st!='play')return;const hold=ph=='wait'||ph=='cross'||ph=='arrive';$('ui').classList.toggle('wt',hold);$('wts').textContent=ph=='cross'?'横断歩道で止まっているよ':'つぎの車が前に入ってきます';
  if(!q)return;setTop();const M=MODES[qm],go=ph=='solve',full=ex.length==7;
  $('expr').innerHTML=`<span class="eq">${ex.map(e=>e.t=='d'?q.d[e.i]:OPN[e.v]).join(' ')||'&nbsp;'}</span><small>＝ ${q.target}${gold?' ★':''}</small>`;
- $('cap').textContent=M.perm?'数字を好きな順に押して、間に記号を入れよう':'数字は左から順番に自動で入るよ(押せません)。記号だけ選んでね';
+ $('cap').textContent=(M.perm?'数字を好きな順に押して、間に記号を入れよう':'数字は左から順番に自動で入るよ(押せません)。記号だけ選んでね')+(mode!='hwy'&&wrong?'  ／  ミス '+wrong+'/3':'');
  const tl=$('tiles');tl.style.gridTemplateColumns='repeat(4,1fr)';
  tl.innerHTML=q.d.map((d,i)=>{const u=ex.some(e=>e.t=='d'&&e.i===i);return M.perm?`<button class="tile" ${go&&need()=='d'&&!u?'':'disabled'} onclick="addD(${i})">${d}</button>`:`<div class="tile fix${u?' u':''}"><i>${i+1}</i>${d}</div>`}).join('');
  const os=M.ops.split('');$('ops').style.gridTemplateColumns=`repeat(${os.length},1fr)`;
