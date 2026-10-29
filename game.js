@@ -30,7 +30,7 @@ let mode='normal',qm='normal',gold=0,lt=0,st='login',ph='idle',score=0,combo=0,l
  spd=1,tg=null,slot=null,slotDist=0,dir=1,xt='straight',missT=0,okT=0,tm=N(),view='drive',bend=0,bendS=0,bendT=0,nextTurn=0,cw=null,lastCross=0,
  tod=rnd(5,19),wx='fine',night=0,hwEnd=0,npcs=[],onc=[],oncOn=0,oncT=0,nextOnc=0,exitS=null,hudS='',paused=0,pauseAt=0,clkS='',lastBlk=-1,rankLine='',
  user='',prev='home',rkMode='easy',leavers=[],plan=null,curS=0,fillT=0;
-try{best=JSON.parse(localStorage.getItem('td_best2')||'{}');user=localStorage.getItem('td_user')||''}catch(e){}
+try{best=JSON.parse(localStorage.getItem('sns_best2')||'{}');user=localStorage.getItem('sns_user')||''}catch(e){}
 const bst=m=>best[m]||{s:0,c:0};
 function fit(){const s=$('stage');W=Math.max(200,s.clientWidth);H=Math.max(200,s.clientHeight);dpr=Math.min(2,devicePixelRatio||1);
  if(ren){ren.setPixelRatio(dpr);ren.setSize(W,H,false);camera.aspect=W/H;camera.updateProjectionMatrix()}}
@@ -636,7 +636,7 @@ function idle(){clearTg();clearLeavers();plan=null;if(cw)endCross();toOn(0);$('u
 function showLogin(){st='login';idle();setTop();
  ovShow(`<h1>${NAME}</h1><p>ユーザー名を入力してください</p><input id="nm" maxlength="12" placeholder="ユーザー名(12文字まで)" value="${esc(user)}"><div id="nerr" class="err"></div><button class="go big" onclick="doLogin()">ログイン</button>`);
  const i=$('nm');if(i)i.onkeydown=e=>{if(e.key=='Enter')doLogin()}}
-function doLogin(){const v=($('nm').value||'').trim().slice(0,12);if(!v){$('nerr').textContent='ユーザー名を入力してください';return}user=v;try{localStorage.setItem('td_user',v)}catch(e){}track('access');showHome()}
+function doLogin(){const v=($('nm').value||'').trim().slice(0,12);if(!v){$('nerr').textContent='ユーザー名を入力してください';return}user=v;try{localStorage.setItem('sns_user',v)}catch(e){}track('access');showHome()}
 function showHome(){st='home';idle();setTop();ovShow(`<h1>${NAME}</h1><button class="go big" onclick="showMenu()">PLAY</button><button class="big" onclick="showHow()">遊び方</button>`)}
 function showHow(){st='how';idle();setTop();
  ovShow(`<h2>遊び方</h2><div class="how"><p class="lead">前の車のナンバー(4つの数字)を計算して、答えの数字にしよう。式にカッコはなく、×÷が先に計算されるよ。</p>
@@ -655,7 +655,7 @@ let ovHtml='',orankT='';
 const setOR=t=>{orankT=t;const e=$('orank');if(e&&st=='over')e.textContent=t};
 function showResult(){st='over';idle();setTop();ovShow(ovHtml);const e=$('orank');if(e&&orankT)e.textContent=orankT}   // ランキングから戻ったとき、さっきのリザルト画面をそのまま出す
 function over(){
- if(st=='over')return;st='over';const b=bst(mode);if(score>b.s){best[mode]={s:score,c:solved};try{localStorage.setItem('td_best2',JSON.stringify(best))}catch(e){}}
+ if(st=='over')return;st='over';const b=bst(mode);if(score>b.s){best[mode]={s:score,c:solved};try{localStorage.setItem('sns_best2',JSON.stringify(best))}catch(e){}}
  idle();setTop();orankT='';const nb=bst(mode);
  ovShow(ovHtml=`<h1 class="huge">${mode=='hwy'?'高速を出ました!':'GAME OVER'}</h1><p class="sub">${lab(mode)}</p>
  <div class="scoreb">${score}<small>点</small></div><p>解いた車 <b>${solved}台</b> ／ BEST ${nb.s}点・${nb.c}台</p><p id="orank" class="sub">ランキング: 確認中…</p>
